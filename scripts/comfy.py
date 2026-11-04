@@ -20,6 +20,12 @@ def submit(prompt):
     return r["prompt_id"]
 
 
+def free():
+    """卸载已缓存的模型并释放内存。换模型或连续跑大模型前调用，可避开重复打补丁时的崩溃。"""
+    body = json.dumps({"unload_models": True, "free_memory": True}).encode()
+    urllib.request.urlopen(urllib.request.Request(URL + "/free", body, {"Content-Type": "application/json"}))
+
+
 def upload(path, name, kind="input"):
     """把本地图片或音频传到 ComfyUI 的 input 目录，名字为 name。"""
     subprocess.run(["curl", "-s", "-m", "120", "-F", f"image=@{path};filename={name}",
