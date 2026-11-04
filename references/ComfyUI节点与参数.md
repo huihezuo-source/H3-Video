@@ -67,6 +67,20 @@
 
 换人：`h3_character_swap` LoRA 强度 1.0，20 步，源视频作参考视频并锁定音频，不用遮罩。每段最多一个硬切。
 
+## 稳定性：连续切换大模型时崩溃
+
+ComfyUI 0.43 在 Windows 上连续跑几个任务、切换大模型（Qwen-Image、Qwen-Image-Edit、文本编码器）时，Python 进程反复崩溃。报错是 0xc0000005 内存访问冲突，崩溃位置每次都不一样，有时在给模型打补丁，有时在加载文本编码器。日志里能看到“prepared for dynamic VRAM loading”“Using RAM pressure cache”。
+
+解决：启动参数加上下面几项，关掉新的动态显存加载和内存压力缓存，改回旧的缓存方式。加上之后连续跑多个改图任务没有再崩。
+
+```
+--disable-dynamic-vram --cache-classic --disable-pinned-memory --disable-async-offload
+```
+
+另外，换模型前调用一次 `comfy.free()`（POST /free 卸载模型），可以减少重复打补丁引发的崩溃。
+
+排查思路：先用 Windows 事件日志确认崩的是不是只有 python。如果系统其他程序也在崩、还有蓝屏，先查硬件（Intel 处理器诊断工具、7-Zip 基准测试、Windows 内存诊断）和系统文件（sfc /verifyonly、DISM /ScanHealth），硬件稳定了再修系统文件。
+
 ## 放大
 
 RealESRGAN_x2 用 spandrel 加载，Mac 上走 mps 逐帧推理，再用 ffmpeg lanczos 缩放到目标尺寸。
