@@ -50,6 +50,52 @@ def wait(pid, timeout=3600, every=8):
     raise TimeoutError(f"{pid} 超过 {timeout} 秒没完成")
 
 
+def queued(pid):
+    """任务是否还在运行或排队。"""
+    q = json.load(urllib.request.urlopen(URL + "/queue", timeout=15))
+    return any(x[1] == pid for x in q.get("queue_running", []) + q.get("queue_pending", []))
+
+
+def alive():
+    """ComfyUI 是否在线。"""
+    try:
+        urllib.request.urlopen(URL + "/system_stats", timeout=5)
+        return True
+    except Exception:
+        return False
+
+
+def run(prompt, out, timeout=3600, retries=3):
+    """提交并等待完成，再下载输出。ComfyUI 中途崩溃（配合自动重启的启动脚本）时，
+    等它恢复后重新提交，最多 retries 次。返回下载的文件名列表。"""
+    for attempt in range(retries + 1):
+        while not alive():
+            time.sleep(10)
+        pid = submit(prompt)
+        print("prompt_id", pid, f"(第 {attempt + 1} 次)" if attempt else "", flush=True)
+        t, missing = time.time(), 0
+        while time.time() - t < timeout:
+            if not alive():
+                print("ComfyUI 断开，等它重启后重新提交", flush=True)
+                break
+            try:
+                h = json.load(urllib.request.urlopen(f"{URL}/history/{pid}", timeout=15))
+                if pid in h and (h[pid]["status"].get("completed") or h[pid]["status"].get("status_str") == "error"):
+                    return download(h[pid], out)
+                # 两次轮询之间崩溃又重启完时 alive() 看不出来：任务既不在历史也不在队列里，连续两次就算丢了
+                missing = 0 if pid in h or queued(pid) else missing + 1
+                if missing >= 2:
+                    print("任务不见了（ComfyUI 可能重启过），重新提交", flush=True)
+                    break
+            except Exception:
+                pass
+            time.sleep(8)
+        else:
+            raise TimeoutError(f"{pid} 超过 {timeout} 秒没完成")
+        time.sleep(20)
+    raise RuntimeError(f"重试 {retries} 次仍然失败")
+
+
 def download(rec, out):
     """下载一条 history 记录里的全部图片、音频、视频输出，返回文件名列表。"""
     os.makedirs(out, exist_ok=True)

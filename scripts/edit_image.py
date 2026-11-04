@@ -28,7 +28,7 @@ p = {
     "16": {"class_type": "VAEDecode", "inputs": {"samples": ["15", 0], "vae": ["3", 0]}},
     "17": {"class_type": "SaveImage", "inputs": {"images": ["16", 0], "filename_prefix": arg("--prefix", f"edits/{stem}")}},
 }
-pid = comfy.submit(p)
-print("prompt_id", pid)
 if "--wait" in sys.argv:
-    print(comfy.download(comfy.wait(pid), arg("--wait")))
+    print(comfy.run(p, arg("--wait")))
+else:
+    print("prompt_id", comfy.submit(p))

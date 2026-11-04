@@ -26,7 +26,7 @@ for i, (name, text) in enumerate(cfg["lines"].items()):
             "cfg": 2.0, "steps": 10, "normalize_text": False, "seed": cfg.get("seed", 201) + i, "force_offload": True,
             "device": "cuda", "dtype": "auto", "voice_config": ["2", 0]}}
     p[b] = {"class_type": "SaveAudio", "inputs": {"audio": [a, 0], "filename_prefix": f"voice/{name}"}}
-pid = comfy.submit(p)
-print("prompt_id", pid)
 if "--wait" in sys.argv:
-    print(comfy.download(comfy.wait(pid), sys.argv[sys.argv.index("--wait") + 1]))
+    print(comfy.run(p, sys.argv[sys.argv.index("--wait") + 1]))
+else:
+    print("prompt_id", comfy.submit(p))

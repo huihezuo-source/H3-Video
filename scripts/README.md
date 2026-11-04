@@ -6,7 +6,7 @@
 export COMFY_URL=http://127.0.0.1:8188
 ```
 
-示例配置在 `../examples/`。所有提交类脚本加 `--wait 输出目录` 会等任务完成并下载结果；不加则只打印 prompt_id，之后用 `wait_download.py` 取。
+示例配置在 `../examples/`。所有提交类脚本加 `--wait 输出目录` 会等任务完成并下载结果，ComfyUI 中途崩溃重启后会自动重新提交（最多 3 次）；不加则只打印 prompt_id，之后用 `wait_download.py` 取。
 
 | 步骤 | 命令 |
 |---|---|

@@ -33,7 +33,7 @@ for name, desc in cfg["characters"].items():
     p[k(2)] = {"class_type": "VAEDecode", "inputs": {"samples": [k(1), 0], "vae": ["3", 0]}}
     p[k(3)] = {"class_type": "SaveImage", "inputs": {"images": [k(2), 0], "filename_prefix": f"{cfg.get('prefix', 'masters')}/{name}"}}
     i += 10
-pid = comfy.submit(p)
-print("prompt_id", pid)
 if "--wait" in sys.argv:
-    print(comfy.download(comfy.wait(pid), sys.argv[sys.argv.index("--wait") + 1]))
+    print(comfy.run(p, sys.argv[sys.argv.index("--wait") + 1]))
+else:
+    print("prompt_id", comfy.submit(p))

@@ -50,7 +50,7 @@ p["45"] = {"class_type": "VAEDecode", "inputs": {"samples": ["44", 0], "vae": ["
 p["46"] = {"class_type": "VAEDecodeAudio", "inputs": {"samples": ["44", 0], "vae": ["5", 0]}}
 p["47"] = {"class_type": "CreateVideo", "inputs": {"images": ["45", 0], "audio": ["46", 0], "fps": 24}}
 p["48"] = {"class_type": "SaveVideo", "inputs": {"video": ["47", 0], "filename_prefix": a.get("prefix", "h3/out"), "format": "mp4", "codec": "h264"}}
-pid = comfy.submit(p)
-print("prompt_id", pid)
 if "--wait" in sys.argv:
-    print(comfy.download(comfy.wait(pid, timeout=4 * 3600, every=20), sys.argv[sys.argv.index("--wait") + 1]))
+    print(comfy.run(p, sys.argv[sys.argv.index("--wait") + 1], timeout=4 * 3600))
+else:
+    print("prompt_id", comfy.submit(p))
