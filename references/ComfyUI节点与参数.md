@@ -71,13 +71,29 @@
 
 ComfyUI 0.43 在 Windows 上连续跑几个任务、切换大模型（Qwen-Image、Qwen-Image-Edit、文本编码器）时，Python 进程反复崩溃。报错是 0xc0000005 内存访问冲突，崩溃位置每次都不一样，有时在给模型打补丁，有时在加载文本编码器。日志里能看到“prepared for dynamic VRAM loading”“Using RAM pressure cache”。
 
-解决：启动参数加上下面几项，关掉新的动态显存加载和内存压力缓存，改回旧的缓存方式。加上之后连续跑多个改图任务没有再崩。
+缓解：启动参数加上下面几项，关掉新的动态显存加载和内存压力缓存，改回旧的缓存方式。加上之后崩得少了，但长时间连续跑仍会偶尔崩（例如在文本编码器 sd1_clip 里），所以还要配合下面的自动重启和自动重交。
 
 ```
 --disable-dynamic-vram --cache-classic --disable-pinned-memory --disable-async-offload
 ```
 
 另外，换模型前调用一次 `comfy.free()`（POST /free 卸载模型），可以减少重复打补丁引发的崩溃。
+
+**自动重启 + 自动重交。** 崩溃没法完全避免时，让它崩了自己起来、任务自己重跑：
+
+1. 电脑端用循环启动脚本，ComfyUI 进程退出后 5 秒自动重启，并记一行日志：
+
+```bat
+@echo off
+cd /d D:\ComfyUI
+:loop
+.venv\Scripts\python.exe main.py --listen 0.0.0.0 --port 8188 --reserve-vram 1 --disable-pinned-memory --disable-async-offload --disable-dynamic-vram --cache-classic
+echo %date% %time% exit %errorlevel% >> D:\ComfyUI\user\restarts.log
+timeout /t 5 /nobreak >nul
+goto loop
+```
+
+2. 提交端用 `comfy.run()`（各脚本加 `--wait` 时就走它）：每 8 秒查一次 `/system_stats`，发现 ComfyUI 断开就等它重启完，再把同一个工作流重新提交，最多重试 3 次。实测一次改图任务中途崩溃，第 2 次提交自动跑完，没有人工介入。
 
 排查思路：先用 Windows 事件日志确认崩的是不是只有 python。如果系统其他程序也在崩、还有蓝屏，先查硬件（Intel 处理器诊断工具、7-Zip 基准测试、Windows 内存诊断）和系统文件（sfc /verifyonly、DISM /ScanHealth），硬件稳定了再修系统文件。
 
