@@ -13,6 +13,8 @@ export COMFY_URL=http://127.0.0.1:8188
 | 出母版 | `python3 t2i_masters.py ../examples/masters.json --wait out/masters` |
 | 改母版 | `python3 edit_image.py out/masters/long_00001_.png "只改头部：把头饰去掉。" --wait out/edits` |
 | 设计角色声音 | `python3 voice_design.py ../examples/voices.json --wait out/voices` |
+| 取原片原声 | `python3 extract_voice_refs.py 原片.mp4 segments.json out/refs` |
+| 克隆各角色原声 | `python3 clone_cast.py ../examples/cast.json --wait out/cast` |
 | 配音 | `python3 tts_clone.py ../examples/voice.json --wait out/voice` |
 | 核对配音 | `python3 asr.py out/voice/*.flac` |
 | 生成视频 | `python3 h3_ref2va.py ../examples/h3_job.json --wait out/video` |
@@ -23,6 +25,6 @@ export COMFY_URL=http://127.0.0.1:8188
 | 字幕和响度 | `python3 post_subtitle_loud.py hd.mp4 final.mp4 ../examples/subs.json` |
 | 封面 | `python3 make_cover.py frame.png out "第一行" "第二行" "标签"` |
 
-依赖：Python 3.9+、ffmpeg、Pillow；放大和封面放大另需 `torch` 和 `spandrel`；转写需 `faster-whisper`。
+依赖：Python 3.9+、ffmpeg、Pillow；放大和封面放大另需 `torch` 和 `spandrel`；转写需 `faster-whisper`；取原声需 `demucs` 和 `soundfile`。
 
 ComfyUI 端需要的模型和自定义节点见 `../references/ComfyUI节点与参数.md`。
