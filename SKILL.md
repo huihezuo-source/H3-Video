@@ -55,6 +55,8 @@ description: 用本地 ComfyUI（MiniMax H3 + Qwen-Image + VoxCPM2）做带对�
 | `t2i_masters.py` | Qwen-Image 批量出角色母版（风格前缀 + 每人描述） |
 | `edit_image.py` | Qwen-Image-Edit 局部改图，其余保持不变 |
 | `voice_design.py` | VoxCPM2 按文字描述设计角色声音，每人出 A/B 两条试听 |
+| `extract_voice_refs.py` | demucs 分离原片人声，按时间切出每个角色的原声参考音 |
+| `clone_cast.py` | VoxCPM2 按每个角色自己的参考音克隆新台词，两种模式对比 |
 | `tts_clone.py` | VoxCPM2 用一段参考音克隆音色，批量出旁白 |
 | `h3_ref2va.py` | 组装并提交 H3 Ref2VA 工作流（参考图、参考音、首帧锚定） |
 | `wait_download.py` | 等任务结束并下载全部输出 |
