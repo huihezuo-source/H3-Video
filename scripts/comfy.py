@@ -56,13 +56,22 @@ def queued(pid):
     return any(x[1] == pid for x in q.get("queue_running", []) + q.get("queue_pending", []))
 
 
-def alive():
-    """ComfyUI 是否在线。"""
+def alive(timeout=20):
+    """ComfyUI 是否在线。跑大模型时接口会慢，超时给长一点。"""
     try:
-        urllib.request.urlopen(URL + "/system_stats", timeout=5)
+        urllib.request.urlopen(URL + "/system_stats", timeout=timeout)
         return True
     except Exception:
         return False
+
+
+def down(checks=4, every=15):
+    """连续 checks 次（间隔 every 秒）都连不上才算真断了。只查一次会把“忙得慢”误判成崩溃。"""
+    for _ in range(checks):
+        if alive():
+            return False
+        time.sleep(every)
+    return True
 
 
 def run(prompt, out, timeout=3600, retries=3):
@@ -75,8 +84,17 @@ def run(prompt, out, timeout=3600, retries=3):
         print("prompt_id", pid, f"(第 {attempt + 1} 次)" if attempt else "", flush=True)
         t, missing = time.time(), 0
         while time.time() - t < timeout:
-            if not alive():
-                print("ComfyUI 断开，等它重启后重新提交", flush=True)
+            if not alive() and down():
+                while not alive():
+                    time.sleep(10)
+                try:   # 恢复后先看任务还在不在：还在说明没重启，只是忙，继续等，不重复提交
+                    still = queued(pid) or pid in json.load(urllib.request.urlopen(f"{URL}/history/{pid}", timeout=20))
+                except Exception:
+                    still = False
+                if still:
+                    print("ComfyUI 刚才没响应，任务还在，继续等", flush=True)
+                    continue
+                print("ComfyUI 断开过，任务丢了，重新提交", flush=True)
                 break
             try:
                 h = json.load(urllib.request.urlopen(f"{URL}/history/{pid}", timeout=15))

@@ -8,7 +8,9 @@ job.json：
   "steps": 20, "seed": 7, "prefix": "h3/seg1",
   "images": ["first_frame.png", "master_a.png"],  # 本地文件，自动上传
   "anchor_frames": [0],                          # 第 i 张图锚定到第几帧；首帧放第一张锚定到 0
+  "guides": [],                                  # 可选，只锚定、不当参考图的帧：[{"image": "s2.png", "frame": 40}]，多镜头切点首帧用这个，省参考图 token
   "audios": [],                                  # 参考音：说话角色的声音参考；旁白段留空
+  "videos": [],                                  # 可选，参考视频（24fps、2–15 秒）：提供镜头运动、切镜和动作，提示词里叫 <Video 1>
   "shift": null                                  # 可选 [video, audio]，一般不用
 }
 旁白段的 prompt 里不要写任何台词；一次生成只有一个发声来源。
@@ -35,11 +37,21 @@ for i, au in enumerate(a.get("audios", [])):
     name = comfy.upload(au, f"h3a_{i}_{os.path.basename(au)}")
     p[str(20 + i)] = {"class_type": "LoadAudio", "inputs": {"audio": name}}
     r[f"ref_audios.ref_audio_{i}"] = [str(20 + i), 0]
+for i, v in enumerate(a.get("videos", [])):
+    name = comfy.upload(v, f"h3v_{i}_{os.path.basename(v)}")
+    p[str(50 + i * 2)] = {"class_type": "LoadVideo", "inputs": {"file": name}}
+    p[str(51 + i * 2)] = {"class_type": "GetVideoComponents", "inputs": {"video": [str(50 + i * 2), 0]}}
+    r[f"ref_videos.ref_video_{i}"] = [str(51 + i * 2), 0]
 p["30"] = {"class_type": "MiniMaxH3ReferenceToVideo", "inputs": r}
 pos, lat = ["30", 0], ["30", 1]
 for i, fr in enumerate(a.get("anchor_frames", [])):
     nid = str(31 + i)
     p[nid] = {"class_type": "MiniMaxH3AddGuide", "inputs": {"positive": pos, "latent": lat, "frame_idx": fr, "vae": ["4", 0], "image": [str(10 + i), 0]}}
+    pos = [nid, 0]
+for i, g in enumerate(a.get("guides", [])):
+    lid, nid = str(60 + i * 2), str(61 + i * 2)
+    p[lid] = {"class_type": "LoadImage", "inputs": {"image": comfy.upload(g["image"], f"h3g_{i}_{os.path.basename(g['image'])}")}}
+    p[nid] = {"class_type": "MiniMaxH3AddGuide", "inputs": {"positive": pos, "latent": lat, "frame_idx": g["frame"], "vae": ["4", 0], "image": [lid, 0]}}
     pos = [nid, 0]
 p["40"] = {"class_type": "BasicGuider", "inputs": {"model": model, "conditioning": pos}}
 p["41"] = {"class_type": "KSamplerSelect", "inputs": {"sampler_name": "res_multistep"}}
