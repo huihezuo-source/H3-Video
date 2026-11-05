@@ -12,6 +12,7 @@ export COMFY_URL=http://127.0.0.1:8188
 |---|---|
 | 出母版 | `python3 t2i_masters.py ../examples/masters.json --wait out/masters` |
 | 改母版 | `python3 edit_image.py out/masters/long_00001_.png "只改头部：把头饰去掉。" --wait out/edits` |
+| 设计角色声音 | `python3 voice_design.py ../examples/voices.json --wait out/voices` |
 | 配音 | `python3 tts_clone.py ../examples/voice.json --wait out/voice` |
 | 核对配音 | `python3 asr.py out/voice/*.flac` |
 | 生成视频 | `python3 h3_ref2va.py ../examples/h3_job.json --wait out/video` |
